@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Group Chat on Node.js</title>
+  <style>
+    body {
+      font-family: 'Helvetica', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #f4f4f4;
+    }
+
+    form {
+      background: #fff;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #3498db;
+    }
+
+    form input {
+      border: none;
+      padding: 10px;
+      width: 80%;
+      margin-right: 2%;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    form button {
+      background: #3498db;
+      border: none;
+      color: #fff;
+      padding: 10px;
+      width: 15%;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    #messages {
+      list-style-type: none;
+      margin: 0;
+      padding: 20px;
+      overflow-y: scroll;
+      max-height: 70vh;
+    }
+
+    #messages li {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      word-wrap: break-word;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    #messages li:nth-child(odd) {
+      background: #ecf0f1;
+    }
+
+    #txt {
+      border: none;
+      padding: 15px;
+      width: 80%;
+      margin-right: 2%;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    #isTyping {
+      margin-left: 20px;
+      color: #95a5a6;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="http://localhost:8080/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <ul id="messages"></ul>
+  <form action="/" method="POST" id="chatForm">
+    <input id="txt" autocomplete="off" autofocus="on" oninput="isTyping()" placeholder="Type your message here..." />
+    <button>Send</button>
+  </form>
+  <p id="isTyping"></p>
+
+  <script>
+    var socket = io.connect('http://localhost:8080');
+
+    $('form').submit(function(e){
+      e.preventDefault();
+      socket.emit('chat_message', $('#txt').val());
+      $('#txt').val('');
+      return false;
+    });
+
+    socket.on('chat_message', function(msg){
+      $('#messages').append($('<li>').html(msg));
+      $('#isTyping').text('');
+    });
+
+    socket.on('is_online', function(username) {
+      $('#messages').append($('<li>').html(username));
+    });
+
+    var username = prompt('Please tell me your name');
+    socket.emit('username', username);
+
+    function isTyping() {
+      socket.emit('typing', username);
+    }
+
+    socket.on('user_typing', function(username) {
+      $('#isTyping').text(`${username} is typing...`);
+    });
+  </script>
+</body>
+</html>
